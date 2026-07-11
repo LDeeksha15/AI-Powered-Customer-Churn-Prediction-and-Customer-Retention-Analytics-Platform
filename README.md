@@ -1,4 +1,4 @@
-# Customer Journey Analytics & Churn Prediction — Online Retail
+# AI-Powered Customer Churn Prediction and Customer Retention Analytics Platform
 
 A full-stack, production-shaped churn prediction platform built on the
 **real UCI Online Retail dataset** (541,910 transactions, UK-based online
@@ -48,8 +48,6 @@ python3 rfm_analysis.py       # generates data/rfm_features.csv
 python3 churn_model.py        # trains model, saves comparison metrics
 python3 app.py                # starts the server, creates database.db on first run
 ```
-
-Open **http://127.0.0.1:5000**.
 
 ### Demo Login
 ```
@@ -116,24 +114,8 @@ built into Python. The SQL is standard ANSI SQL; migrating to MySQL later
 means swapping the connection method and one line of table syntax
 (`AUTOINCREMENT` → `AUTO_INCREMENT`). Application logic wouldn't need to change.
 
-## Model Explainability — Without SHAP
 
-For Logistic Regression, `prediction = intercept + Σ(coefficient × feature)`.
-This project computes each feature's exact contribution to that sum —
-mathematically equivalent to what SHAP computes for linear models, no
-extra dependency needed.
-
-**A real bug I caught and fixed during testing:** `frequency` and
-`monetary` are correlated with `purchase_rate` and `clv` (multicollinearity),
-which caused their individual coefficients to have counter-intuitive signs
-when interpreted alone — e.g. "low frequency decreases risk," which
-contradicts common sense even though it's mathematically consistent with
-the full model. The fix: customer-facing explanations are restricted to
-`purchase_rate`, `clv`, `F_score`, `M_score` — features with stable,
-intuitive coefficient signs — while all 8 features are still used for the
-actual prediction. This is documented directly in `app.py`.
-
-## Known Limitations (be upfront about these)
+## Limitations
 
 - **Password reset emails aren't actually sent** — no SMTP/email service is
   configured in this environment. The reset link is displayed on-screen
@@ -148,7 +130,7 @@ actual prediction. This is documented directly in `app.py`.
   used to build this had no internet access to install it. The comparison
   currently covers Logistic Regression, Random Forest, and Gradient Boosting.
 
-## What Makes This Project Interview-Ready
+## Project Highlights
 
 1. **Real transactional data**, not synthetic — 541K+ rows, honestly cleaned
 2. **Data leakage explicitly prevented and explained**
@@ -161,21 +143,32 @@ actual prediction. This is documented directly in `app.py`.
 9. **Honest about limitations** — email sending and live deployment are
    correctly identified as needing infrastructure beyond a local demo
 
-## Talking Points for Your Resume/Interview
-- "Built and deployed a full-stack churn prediction platform on the real
-  UCI Online Retail dataset (541K+ transactions), achieving ~87% accuracy
-  with Logistic Regression while explicitly preventing data leakage."
-- "Implemented a coefficient-based explainability engine, identifying and
-  correcting a multicollinearity issue where correlated features produced
-  counter-intuitive individual signs."
-- "Designed a persistent SQLite-backed multi-user system with role-based
-  access control, bulk CSV prediction, and CSV/Excel/PDF export."
-- "Exposed the model via a REST API and built an admin-facing audit log
-  for tracking user activity across the platform."
+## Tech Stack
 
-## Security Notes
-- Passwords are hashed with werkzeug (never stored in plain text)
-- Secret key and port are environment-configurable for deployment
-  (`SECRET_KEY`, `PORT`, `FLASK_DEBUG` env vars)
-- For production: use PostgreSQL/MySQL instead of SQLite, configure a real
-  email service, and never commit `database.db` or secrets to a public repo
+- Python
+- Flask
+- Scikit-learn
+- Pandas
+- NumPy
+- SQLite
+- HTML5
+- CSS3
+- JavaScript
+- Chart.js
+- Bootstrap
+- Git
+- GitHub
+
+## Model Performance
+
+- Logistic Regression Accuracy: 87.56%
+- Cross Validation Accuracy: 86.17%
+- Dataset Size: 541,909 Transactions
+- Customers: 4,338
+
+## Conclusion
+
+This project demonstrates an end-to-end Machine Learning application, from data preprocessing and feature engineering to model training, evaluation, and deployment as a full-stack web application. It combines customer churn prediction, Customer Lifetime Value (CLV) estimation, RFM segmentation, Explainable AI, user authentication, REST APIs, and persistent database management into a production-oriented analytics platform. The project highlights practical skills in Machine Learning, Data Analytics, Backend Development, Database Management, and Web Application Deployment using real-world e-commerce data.
+
+## Project Live Deployment Link:
+https://ai-powered-customer-churn-prediction-and.onrender.com/login
