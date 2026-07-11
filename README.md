@@ -7,6 +7,9 @@ a Logistic Regression model, a SQLite-backed multi-user system with
 registration, bulk prediction, model explainability, exports, an admin
 audit trail, a REST API, and a glassmorphism UI with dark/light themes.
 
+## Project Live Deployment Link:
+https://ai-powered-customer-churn-prediction-and.onrender.com/login
+
 ## Project Structure
 ```
 churn_project_v2/
@@ -169,6 +172,3 @@ means swapping the connection method and one line of table syntax
 ## Conclusion
 
 This project demonstrates an end-to-end Machine Learning application, from data preprocessing and feature engineering to model training, evaluation, and deployment as a full-stack web application. It combines customer churn prediction, Customer Lifetime Value (CLV) estimation, RFM segmentation, Explainable AI, user authentication, REST APIs, and persistent database management into a production-oriented analytics platform. The project highlights practical skills in Machine Learning, Data Analytics, Backend Development, Database Management, and Web Application Deployment using real-world e-commerce data.
-
-## Project Live Deployment Link:
-https://ai-powered-customer-churn-prediction-and.onrender.com/login
