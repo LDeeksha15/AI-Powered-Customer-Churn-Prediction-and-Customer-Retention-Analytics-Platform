@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem("theme")||"dark";document.documentElement.setAttribute("data-theme",t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Account | Churn Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}">
+</head>
+<body>
+  <div class="mesh-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <div class="register-wrapper">
+    <div class="register-card fade-in-up">
+      <div class="brand">
+        <div class="brand-mark">CI</div>
+        <h1>Create Your Account</h1>
+        <p class="brand-sub">Join Churn Intelligence to start predicting customer retention</p>
+      </div>
+
+      <form id="registerForm" method="POST" action="{{ url_for('register') }}" novalidate>
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" name="name" placeholder="Jane Doe" value="{{ name or '' }}">
+          <span class="error-text" id="nameError"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="text" id="email" name="email" placeholder="you@example.com" value="{{ email or '' }}" autocomplete="email">
+          <span class="error-text" id="emailError"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="password" name="password" placeholder="At least 8 characters" autocomplete="new-password">
+            <button type="button" class="toggle-password" id="togglePassword1">Show</button>
+          </div>
+          <span class="error-text" id="passwordError"></span>
+          <div class="password-hints" id="passwordHints">
+            <span data-rule="length">8+ characters</span>
+            <span data-rule="upper">Uppercase letter</span>
+            <span data-rule="lower">Lowercase letter</span>
+            <span data-rule="number">Number</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirm_password">Confirm Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter your password" autocomplete="new-password">
+            <button type="button" class="toggle-password" id="togglePassword2">Show</button>
+          </div>
+          <span class="error-text" id="confirmPasswordError"></span>
+        </div>
+
+        <button type="submit" class="btn-register" id="registerBtn">
+          <span class="btn-text">Create Account</span>
+          <span class="btn-spinner" id="registerSpinner"></span>
+        </button>
+      </form>
+
+      <div class="login-link">
+        Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+      </div>
+    </div>
+
+    <footer class="page-footer">
+      <p>Customer Journey Analytics &amp; Churn Prediction &middot; Built with Python, scikit-learn &amp; Flask</p>
+    </footer>
+  </div>
+
+  <script>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        const flashMessages = [
+          {% for category, message in messages %}
+            { category: "{{ category }}", text: "{{ message }}" },
+          {% endfor %}
+        ];
+      {% else %}
+        const flashMessages = [];
+      {% endif %}
+    {% endwith %}
+
+    function showToast(text, type) {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = "toast toast-" + (type || "error");
+      toast.innerHTML = '<span class="toast-dot"></span><span>' + text + '</span>';
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add("show"));
+      setTimeout(() => { toast.classList.remove("show"); setTimeout(() => toast.remove(), 300); }, 4200);
+    }
+    flashMessages.forEach(function (m) { showToast(m.text, m.category === "error" ? "error" : "success"); });
+
+    const form = document.getElementById("registerForm");
+    const nameInput = document.getElementById("name");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const confirmInput = document.getElementById("confirm_password");
+    const registerBtn = document.getElementById("registerBtn");
+
+    function isValidEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    }
+
+    // Live password rule checklist
+    passwordInput.addEventListener("input", function () {
+      const val = passwordInput.value;
+      const rules = {
+        length: val.length >= 8,
+        upper: /[A-Z]/.test(val),
+        lower: /[a-z]/.test(val),
+        number: /[0-9]/.test(val)
+      };
+      document.querySelectorAll("#passwordHints span").forEach(function (el) {
+        const rule = el.getAttribute("data-rule");
+        el.classList.toggle("rule-met", rules[rule]);
+      });
+    });
+
+    form.addEventListener("submit", function (e) {
+      let valid = true;
+      document.querySelectorAll(".error-text").forEach(el => el.textContent = "");
+      [nameInput, emailInput, passwordInput, confirmInput].forEach(el => el.classList.remove("input-error"));
+
+      if (!nameInput.value.trim() || nameInput.value.trim().length < 2) {
+        document.getElementById("nameError").textContent = "Please enter your full name.";
+        nameInput.classList.add("input-error");
+        valid = false;
+      }
+
+      if (!emailInput.value.trim()) {
+        document.getElementById("emailError").textContent = "Email is required.";
+        emailInput.classList.add("input-error");
+        valid = false;
+      } else if (!isValidEmail(emailInput.value.trim())) {
+        document.getElementById("emailError").textContent = "Enter a valid email address.";
+        emailInput.classList.add("input-error");
+        valid = false;
+      }
+
+      const pw = passwordInput.value;
+      if (!pw) {
+        document.getElementById("passwordError").textContent = "Password is required.";
+        passwordInput.classList.add("input-error");
+        valid = false;
+      } else if (pw.length < 8 || !/[A-Z]/.test(pw) || !/[a-z]/.test(pw) || !/[0-9]/.test(pw)) {
+        document.getElementById("passwordError").textContent = "Password does not meet all requirements.";
+        passwordInput.classList.add("input-error");
+        valid = false;
+      }
+
+      if (confirmInput.value !== pw) {
+        document.getElementById("confirmPasswordError").textContent = "Passwords do not match.";
+        confirmInput.classList.add("input-error");
+        valid = false;
+      }
+
+      if (!valid) {
+        e.preventDefault();
+        showToast("Please fix the highlighted fields.", "error");
+      } else {
+        registerBtn.classList.add("loading");
+      }
+    });
+
+    document.getElementById("togglePassword1").addEventListener("click", function () {
+      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
+      this.textContent = type === "password" ? "Show" : "Hide";
+    });
+    document.getElementById("togglePassword2").addEventListener("click", function () {
+      const type = confirmInput.getAttribute("type") === "password" ? "text" : "password";
+      confirmInput.setAttribute("type", type);
+      this.textContent = type === "password" ? "Show" : "Hide";
+    });
+  </script>
+</body>
+</html>

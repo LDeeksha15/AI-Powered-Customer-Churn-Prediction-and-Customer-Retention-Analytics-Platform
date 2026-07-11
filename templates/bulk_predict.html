@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem("theme")||"dark";document.documentElement.setAttribute("data-theme",t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bulk Prediction | Churn Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <div class="mesh-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="brand-mark">CI</div>
+      <span>Churn Intelligence</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Dashboard</a>
+      <a href="{{ url_for('predict') }}">Predict</a>
+      <a href="{{ url_for('bulk_predict') }}" class="active">Bulk Upload</a>
+      <a href="{{ url_for('history') }}">History</a>
+      <a href="{{ url_for('profile') }}">Profile</a>
+      {% if session.get('role') == 'admin' %}<a href="{{ url_for('admin_logs') }}">Activity Logs</a>{% endif %}
+    </div>
+    <div class="nav-right">
+      <span class="nav-user">{{ username }}</span>
+      <button type="button" class="theme-toggle" id="themeToggle" title="Toggle theme">Theme</button>
+      <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <span class="eyebrow">BATCH PROCESSING</span>
+      <h2>Bulk Churn Prediction</h2>
+      <p>Upload a CSV of multiple customers to predict churn for all of them at once.</p>
+    </div>
+
+    <div class="glass-card">
+      <h3>Upload CSV</h3>
+      <p class="help-text" style="margin-bottom: 16px;">
+        Required columns: <code>customer_name, frequency, monetary, avg_order_value, tenure_days</code>
+      </p>
+
+      <form method="POST" action="{{ url_for('bulk_predict') }}" enctype="multipart/form-data" id="bulkForm">
+        <div class="form-group">
+          <label for="csv_file">CSV File</label>
+          <input type="file" id="csv_file" name="csv_file" accept=".csv">
+        </div>
+        <button type="submit" class="btn-primary" id="bulkBtn">
+          <span class="btn-text">Run Bulk Prediction</span>
+          <span class="btn-spinner" id="bulkSpinner"></span>
+        </button>
+      </form>
+
+      <div class="reset-link-box" style="margin-top: 20px;">
+        <p>Example CSV format:</p>
+        <div class="mono" style="font-size: 12px; color: var(--text-muted); line-height: 1.7;">
+          customer_name,frequency,monetary,avg_order_value,tenure_days<br>
+          Alice Smith,15,5000,330,300<br>
+          Bob Jones,1,300,250,320
+        </div>
+      </div>
+    </div>
+
+    {% if results %}
+    <div class="glass-card">
+      <h3>Results ({{ results | length }} customers)</h3>
+      <a href="{{ url_for('bulk_predict_download') }}" class="btn-secondary" style="margin-bottom: 18px; display: inline-flex;">Download Results CSV</a>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Frequency</th>
+              <th>Spent</th>
+              <th>Tenure</th>
+              <th>Churn %</th>
+              <th>Risk</th>
+              <th>Tier</th>
+              <th>CLV</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in results %}
+            <tr style="animation-delay: {{ loop.index0 * 0.02 }}s">
+              <td>{{ r.customer_name }}</td>
+              <td class="mono">{{ r.frequency | int }}</td>
+              <td class="mono">£{{ "{:,.0f}".format(r.monetary) }}</td>
+              <td class="mono">{{ r.tenure_days | int }}d</td>
+              <td class="mono">{{ r.churn_probability }}%</td>
+              <td><span class="pill pill-{{ r.risk_level | lower }}">{{ r.risk_level }}</span></td>
+              <td><span class="pill pill-tier-{{ r.value_tier | lower }}">{{ r.value_tier }}</span></td>
+              <td class="mono">£{{ "{:,.0f}".format(r.clv_estimate) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <footer class="page-footer">
+    <p>Customer Journey Analytics &amp; Churn Prediction &middot; Built with Python, scikit-learn &amp; Flask</p>
+  </footer>
+
+  <script>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        const flashMessages = [
+          {% for category, message in messages %}
+            { category: "{{ category }}", text: "{{ message }}" },
+          {% endfor %}
+        ];
+      {% else %}
+        const flashMessages = [];
+      {% endif %}
+    {% endwith %}
+
+    function showToast(text, type) {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = "toast toast-" + (type || "error");
+      toast.innerHTML = '<span class="toast-dot"></span><span>' + text + '</span>';
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add("show"));
+      setTimeout(() => { toast.classList.remove("show"); setTimeout(() => toast.remove(), 300); }, 4500);
+    }
+    flashMessages.forEach(function (m) { showToast(m.text, m.category === "error" ? "error" : "success"); });
+
+    document.getElementById("bulkForm").addEventListener("submit", function (e) {
+      const fileInput = document.getElementById("csv_file");
+      if (!fileInput.files.length) {
+        e.preventDefault();
+        showToast("Please choose a CSV file first.", "error");
+        return;
+      }
+      document.getElementById("bulkBtn").classList.add("loading");
+    });
+  </script>
+  <script>
+    var themeToggleBtn = document.getElementById("themeToggle");
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener("click", function () {
+        var current = document.documentElement.getAttribute("data-theme") || "dark";
+        var next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("theme", next);
+      });
+    }
+  </script>
+</body>
+</html>

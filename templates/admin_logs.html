@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem("theme")||"dark";document.documentElement.setAttribute("data-theme",t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activity Logs | Churn Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <div class="mesh-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="brand-mark">CI</div>
+      <span>Churn Intelligence</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Dashboard</a>
+      <a href="{{ url_for('predict') }}">Predict</a>
+      <a href="{{ url_for('bulk_predict') }}">Bulk Upload</a>
+      <a href="{{ url_for('history') }}">History</a>
+      <a href="{{ url_for('profile') }}">Profile</a>
+      <a href="{{ url_for('admin_logs') }}" class="active">Activity Logs</a>
+    </div>
+    <div class="nav-right">
+      <span class="nav-user">{{ username }}</span>
+      <button type="button" class="theme-toggle" id="themeToggle" title="Toggle theme">Theme</button>
+      <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <span class="eyebrow">ADMIN ONLY</span>
+      <h2>Activity Logs</h2>
+      <p>Audit trail of key actions across all users — logins, predictions, uploads, exports, and password resets.</p>
+    </div>
+
+    {% if logs %}
+    <div class="glass-card">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date/Time</th>
+              <th>User</th>
+              <th>Action</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr style="animation-delay: {{ loop.index0 * 0.02 }}s">
+              <td class="mono">{{ log.created_at[:19] | replace('T', ' ') }}</td>
+              <td>{{ log.user_name or 'Unknown' }}<br><span style="color: var(--text-muted); font-size: 11.5px;">{{ log.user_email or '' }}</span></td>
+              <td><span class="pill" style="background: rgba(99,102,241,0.15); color: var(--accent-2);">{{ log.action }}</span></td>
+              <td style="color: var(--text-muted); font-size: 13px;">{{ log.details or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="glass-card empty-state">
+      <h3>No activity yet</h3>
+      <p>Activity will appear here as users log in, predict, and use the platform.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <footer class="page-footer">
+    <p>Customer Journey Analytics &amp; Churn Prediction &middot; Built with Python, scikit-learn &amp; Flask</p>
+  </footer>
+  <script>
+    var themeToggleBtn = document.getElementById("themeToggle");
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener("click", function () {
+        var current = document.documentElement.getAttribute("data-theme") || "dark";
+        var next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("theme", next);
+      });
+    }
+  </script>
+</body>
+</html>

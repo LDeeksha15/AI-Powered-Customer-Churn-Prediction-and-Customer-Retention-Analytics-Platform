@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem("theme")||"dark";document.documentElement.setAttribute("data-theme",t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In | Churn Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="mesh-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <div class="login-wrapper">
+    <div class="login-card fade-in-up">
+      <div class="brand">
+        <div class="brand-mark">CI</div>
+        <h1>Churn Intelligence</h1>
+        <p class="brand-sub">Customer Journey &amp; Retention Analytics Platform</p>
+      </div>
+
+      <form id="loginForm" method="POST" action="{{ url_for('login') }}" novalidate>
+        <div class="form-group">
+          <label for="identifier">Email Address</label>
+          <div class="input-wrapper">
+            <input type="text" id="identifier" name="identifier" placeholder="you@example.com"
+                   value="{{ identifier or '' }}" autocomplete="username">
+          </div>
+          <span class="error-text" id="identifierError"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="password" name="password" placeholder="Enter your password"
+                   autocomplete="current-password">
+            <button type="button" class="toggle-password" id="togglePassword">Show</button>
+          </div>
+          <span class="error-text" id="passwordError"></span>
+        </div>
+
+        <div class="form-row">
+          <label class="remember-me">
+            <input type="checkbox" name="remember_me" id="rememberMe">
+            <span class="checkbox-visual"></span>
+            <span>Remember me</span>
+          </label>
+          <a href="{{ url_for('forgot_password') }}" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn-login" id="loginBtn">
+          <span class="btn-text">Sign In</span>
+          <span class="btn-spinner" id="loginSpinner"></span>
+        </button>
+      </form>
+
+      <div class="demo-hint">
+        <span class="demo-label">DEMO ACCESS</span>
+        <div class="demo-creds">
+          <code>admin@churnapp.com</code>
+          <code>Admin@123</code>
+        </div>
+      </div>
+
+      <div class="login-link">
+        Don't have an account? <a href="{{ url_for('register') }}">Create one</a>
+      </div>
+    </div>
+
+    <footer class="page-footer">
+      <p>Customer Journey Analytics &amp; Churn Prediction &middot; Built with Python, scikit-learn &amp; Flask</p>
+      <p class="footer-sub">Dataset: UCI Online Retail (541K+ real transactions) &middot; Model: Logistic Regression</p>
+    </footer>
+  </div>
+
+  <script>
+    // ---- Flash messages rendered as toasts ----
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        const flashMessages = [
+          {% for category, message in messages %}
+            { category: "{{ category }}", text: "{{ message }}" },
+          {% endfor %}
+        ];
+      {% else %}
+        const flashMessages = [];
+      {% endif %}
+    {% endwith %}
+
+    function showToast(text, type) {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = "toast toast-" + (type || "error");
+      toast.innerHTML = '<span class="toast-dot"></span><span>' + text + '</span>';
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add("show"));
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 300);
+      }, 4200);
+    }
+
+    flashMessages.forEach(function (m) { showToast(m.text, m.category === "error" ? "error" : "success"); });
+
+    // ---- Custom cursor (desktop only) ----
+    const cursorDot = document.getElementById("cursorDot");
+    const cursorRing = document.getElementById("cursorRing");
+    if (window.matchMedia("(pointer: fine)").matches) {
+      let ringX = 0, ringY = 0;
+      document.addEventListener("mousemove", function (e) {
+        cursorDot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        ringX += (e.clientX - ringX) * 0.15;
+        ringY += (e.clientY - ringY) * 0.15;
+      });
+      function animateRing() {
+        cursorRing.style.transform = `translate(${ringX}px, ${ringY}px)`;
+        requestAnimationFrame(animateRing);
+      }
+      animateRing();
+      document.querySelectorAll("input, button, a").forEach(function (el) {
+        el.addEventListener("mouseenter", () => cursorRing.classList.add("cursor-hover"));
+        el.addEventListener("mouseleave", () => cursorRing.classList.remove("cursor-hover"));
+      });
+    } else {
+      cursorDot.style.display = "none";
+      cursorRing.style.display = "none";
+    }
+
+    // ---- Form validation ----
+    const form = document.getElementById("loginForm");
+    const identifier = document.getElementById("identifier");
+    const password = document.getElementById("password");
+    const identifierError = document.getElementById("identifierError");
+    const passwordError = document.getElementById("passwordError");
+    const loginBtn = document.getElementById("loginBtn");
+
+    function isValidEmailOrUsername(value) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(value) || /^[A-Za-z0-9_]{3,}$/.test(value);
+    }
+
+    form.addEventListener("submit", function (e) {
+      let valid = true;
+      identifierError.textContent = "";
+      passwordError.textContent = "";
+      identifier.classList.remove("input-error");
+      password.classList.remove("input-error");
+
+      const idValue = identifier.value.trim();
+      const pwValue = password.value;
+
+      if (!idValue) {
+        identifierError.textContent = "Email or username is required.";
+        identifier.classList.add("input-error");
+        valid = false;
+      } else if (!isValidEmailOrUsername(idValue)) {
+        identifierError.textContent = "Enter a valid email address or username.";
+        identifier.classList.add("input-error");
+        valid = false;
+      }
+
+      if (!pwValue) {
+        passwordError.textContent = "Password is required.";
+        password.classList.add("input-error");
+        valid = false;
+      } else if (pwValue.length < 6) {
+        passwordError.textContent = "Password must be at least 6 characters.";
+        password.classList.add("input-error");
+        valid = false;
+      }
+
+      if (!valid) {
+        e.preventDefault();
+        showToast("Please fix the highlighted fields.", "error");
+      } else {
+        loginBtn.classList.add("loading");
+      }
+    });
+
+    document.getElementById("togglePassword").addEventListener("click", function () {
+      const type = password.getAttribute("type") === "password" ? "text" : "password";
+      password.setAttribute("type", type);
+      this.textContent = type === "password" ? "Show" : "Hide";
+    });
+  </script>
+</body>
+</html>

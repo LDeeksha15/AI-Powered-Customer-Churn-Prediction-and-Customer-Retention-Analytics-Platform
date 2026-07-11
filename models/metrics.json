@@ -1,0 +1,19 @@
+{
+  "model_name": "Logistic Regression",
+  "accuracy": 87.56,
+  "precision": 82.04,
+  "recall": 80.34,
+  "f1_score": 81.18,
+  "roc_auc": 0.9383,
+  "cv_mean_accuracy": 86.17,
+  "features_used": [
+    "frequency",
+    "monetary",
+    "avg_order_value",
+    "tenure_days",
+    "purchase_rate",
+    "clv",
+    "F_score",
+    "M_score"
+  ]
+}

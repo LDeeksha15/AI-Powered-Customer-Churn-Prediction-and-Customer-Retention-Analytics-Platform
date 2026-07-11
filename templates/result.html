@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem("theme")||"dark";document.documentElement.setAttribute("data-theme",t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prediction Result | Churn Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/result.css') }}">
+</head>
+<body>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="mesh-bg">
+    <div class="blob blob-1 risk-{{ result.risk_level | lower }}"></div>
+    <div class="blob blob-2"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="brand-mark">CI</div>
+      <span>Churn Intelligence</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Dashboard</a>
+      <a href="{{ url_for('predict') }}">Predict</a>
+      <a href="{{ url_for('bulk_predict') }}">Bulk Upload</a>
+      <a href="{{ url_for('history') }}">History</a>
+      <a href="{{ url_for('profile') }}">Profile</a>
+      {% if session.get('role') == 'admin' %}<a href="{{ url_for('admin_logs') }}">Activity Logs</a>{% endif %}
+    </div>
+    <div class="nav-right">
+      <span class="nav-user">{{ username }}</span>
+      <button type="button" class="theme-toggle" id="themeToggle" title="Toggle theme">Theme</button>
+      <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <a href="{{ url_for('predict') }}" class="back-link">Predict Another Customer</a>
+
+    <div class="hero-card risk-{{ result.risk_level | lower }} fade-in-up">
+      <div class="hero-grid">
+        <div class="gauge-wrapper">
+          <svg class="gauge" viewBox="0 0 200 200">
+            <circle class="gauge-track" cx="100" cy="100" r="85"></circle>
+            <circle class="gauge-fill" cx="100" cy="100" r="85"
+                    style="stroke-dasharray: {{ (result.churn_probability / 100 * 534.07) | round(2) }} 534.07;"></circle>
+          </svg>
+          <div class="gauge-label">
+            <div class="gauge-value">{{ result.churn_probability }}<span class="gauge-pct">%</span></div>
+            <div class="gauge-caption">Churn Probability</div>
+          </div>
+        </div>
+
+        <div class="hero-info">
+          <div class="badge-row">
+            <span class="risk-badge">{{ result.risk_level }} Risk</span>
+            <span class="tier-badge tier-{{ result.value_tier | lower }}">{{ result.value_tier }} Tier</span>
+          </div>
+          {% if result.customer_name %}
+          <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-family: 'JetBrains Mono', monospace;">{{ result.customer_name }}</div>
+          {% endif %}
+          <h2>{{ result.churn_prediction }}</h2>
+          <div class="clv-box">
+            <span class="clv-label">Estimated Customer Lifetime Value</span>
+            <span class="clv-value">£{{ "{:,.0f}".format(result.clv_estimate) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="explain-card">
+      <h3><span class="eyebrow">MODEL EXPLAINABILITY</span>Why This Prediction</h3>
+      <p class="explain-sub">The strongest factors the model weighed for this specific customer:</p>
+      <ul class="explain-list">
+        {% for item in result.explanations %}
+        <li class="{{ 'risk-up' if item.increases_risk else 'risk-down' }}" style="animation-delay: {{ loop.index0 * 0.08 }}s">
+          <span class="explain-tag">{{ 'INCREASES RISK' if item.increases_risk else 'DECREASES RISK' }}</span>
+          <span class="explain-text">{{ item.text }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="recommendations-card">
+      <h3><span class="eyebrow">RETENTION STRATEGY</span>Recommended Actions</h3>
+      <ul class="recommendations-list">
+        {% for rec in result.recommendations %}
+        <li style="animation-delay: {{ loop.index0 * 0.08 }}s">{{ rec }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="input-summary-card">
+      <h3>Prediction Summary</h3>
+      <div class="input-summary-grid">
+        <div><span>Order Frequency</span><strong>{{ result.inputs.frequency | int }}</strong></div>
+        <div><span>Total Spent</span><strong>£{{ "{:,.0f}".format(result.inputs.monetary) }}</strong></div>
+        <div><span>Avg Order Value</span><strong>£{{ "{:,.0f}".format(result.inputs.avg_order_value) }}</strong></div>
+        <div><span>Tenure</span><strong>{{ result.inputs.tenure_days | int }} days</strong></div>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <a href="{{ url_for('predict') }}" class="btn-secondary">
+        <span>Predict Another</span>
+      </a>
+      <a href="{{ url_for('home') }}" class="btn-primary">
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    <p>Customer Journey Analytics &amp; Churn Prediction &middot; Built with Python, scikit-learn &amp; Flask</p>
+  </footer>
+
+  <script>
+    // Theme toggle
+    const themeToggleBtn = document.getElementById("themeToggle");
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener("click", function () {
+        const current = document.documentElement.getAttribute("data-theme") || "dark";
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("theme", next);
+      });
+    }
+
+    // Custom cursor
+    const cursorDot = document.getElementById("cursorDot");
+    const cursorRing = document.getElementById("cursorRing");
+    if (window.matchMedia("(pointer: fine)").matches) {
+      let ringX = 0, ringY = 0;
+      document.addEventListener("mousemove", function (e) {
+        cursorDot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        ringX += (e.clientX - ringX) * 0.15;
+        ringY += (e.clientY - ringY) * 0.15;
+      });
+      function animateRing() { cursorRing.style.transform = `translate(${ringX}px, ${ringY}px)`; requestAnimationFrame(animateRing); }
+      animateRing();
+      document.querySelectorAll("a, button").forEach(function (el) {
+        el.addEventListener("mouseenter", () => cursorRing.classList.add("cursor-hover"));
+        el.addEventListener("mouseleave", () => cursorRing.classList.remove("cursor-hover"));
+      });
+    } else {
+      cursorDot.style.display = "none";
+      cursorRing.style.display = "none";
+    }
+
+    // Animate the gauge fill in on load
+    window.addEventListener("load", function () {
+      const fill = document.querySelector(".gauge-fill");
+      const finalDash = fill.style.strokeDasharray;
+      fill.style.strokeDasharray = "0 534.07";
+      requestAnimationFrame(function () {
+        fill.style.transition = "stroke-dasharray 1.3s cubic-bezier(0.4, 0, 0.2, 1)";
+        fill.style.strokeDasharray = finalDash;
+      });
+    });
+  </script>
+</body>
+</html>

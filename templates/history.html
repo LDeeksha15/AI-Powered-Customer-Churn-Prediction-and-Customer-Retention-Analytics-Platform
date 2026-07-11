@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem("theme")||"dark";document.documentElement.setAttribute("data-theme",t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Predictions | Churn Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <div class="mesh-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="brand-mark">CI</div>
+      <span>Churn Intelligence</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Dashboard</a>
+      <a href="{{ url_for('predict') }}">Predict</a>
+      <a href="{{ url_for('bulk_predict') }}">Bulk Upload</a>
+      <a href="{{ url_for('history') }}" class="active">History</a>
+      <a href="{{ url_for('profile') }}">Profile</a>
+      {% if session.get('role') == 'admin' %}<a href="{{ url_for('admin_logs') }}">Activity Logs</a>{% endif %}
+    </div>
+    <div class="nav-right">
+      <span class="nav-user">{{ username }}</span>
+      <button type="button" class="theme-toggle" id="themeToggle" title="Toggle theme">Theme</button>
+      <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <span class="eyebrow">PREDICTION LOG</span>
+      <h2>My Predictions</h2>
+      <p>A record of every churn prediction you've run, most recent first.</p>
+    </div>
+
+    <form class="filter-bar" method="GET" action="{{ url_for('history') }}">
+      <div class="form-group">
+        <label for="search">Search</label>
+        <input type="text" id="search" name="search" placeholder="Customer name or ID..." value="{{ current_search }}">
+      </div>
+      <div class="form-group">
+        <label for="risk">Risk Level</label>
+        <select id="risk" name="risk" class="filter-select">
+          <option value="" {{ 'selected' if not current_risk }}>All Levels</option>
+          <option value="High" {{ 'selected' if current_risk == 'High' }}>High</option>
+          <option value="Medium" {{ 'selected' if current_risk == 'Medium' }}>Medium</option>
+          <option value="Low" {{ 'selected' if current_risk == 'Low' }}>Low</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-secondary">Apply</button>
+      {% if current_risk or current_search %}
+      <a href="{{ url_for('history') }}" class="btn-secondary">Clear</a>
+      {% endif %}
+    </form>
+
+    <div class="export-row">
+      <a href="{{ url_for('export_csv') }}" class="btn-secondary">Export CSV</a>
+      <a href="{{ url_for('export_excel') }}" class="btn-secondary">Export Excel</a>
+      <a href="{{ url_for('export_pdf') }}" class="btn-secondary">Export PDF</a>
+    </div>
+
+    {% if predictions %}
+    <div class="glass-card">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Customer</th>
+              <th>Date</th>
+              <th>Frequency</th>
+              <th>Spent</th>
+              <th>Tenure</th>
+              <th>Churn %</th>
+              <th>Risk</th>
+              <th>Tier</th>
+              <th>CLV</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in predictions %}
+            <tr style="animation-delay: {{ loop.index0 * 0.03 }}s">
+              <td class="mono">{{ loop.index }}</td>
+              <td>{{ p.customer_name or '—' }}</td>
+              <td class="mono">{{ p.created_at[:10] }}</td>
+              <td class="mono">{{ p.frequency | int }}</td>
+              <td class="mono">£{{ "{:,.0f}".format(p.monetary) }}</td>
+              <td class="mono">{{ p.tenure_days | int }}d</td>
+              <td class="mono">{{ p.churn_probability }}%</td>
+              <td><span class="pill pill-{{ p.risk_level | lower }}">{{ p.risk_level }}</span></td>
+              <td><span class="pill pill-tier-{{ p.value_tier | lower }}">{{ p.value_tier }}</span></td>
+              <td class="mono">£{{ "{:,.0f}".format(p.clv_estimate) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="glass-card empty-state">
+      <h3>No predictions found</h3>
+      <p>{% if current_risk or current_search %}Try adjusting your search or filter.{% else %}Run your first churn prediction to see it appear here.{% endif %}</p>
+      <a href="{{ url_for('predict') }}" class="btn-primary" style="width: auto; display: inline-flex; padding: 14px 32px;">Predict Customer Churn</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <footer class="page-footer">
+    <p>Customer Journey Analytics &amp; Churn Prediction &middot; Built with Python, scikit-learn &amp; Flask</p>
+  </footer>
+  <script>
+    var themeToggleBtn = document.getElementById("themeToggle");
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener("click", function () {
+        var current = document.documentElement.getAttribute("data-theme") || "dark";
+        var next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("theme", next);
+      });
+    }
+  </script>
+</body>
+</html>

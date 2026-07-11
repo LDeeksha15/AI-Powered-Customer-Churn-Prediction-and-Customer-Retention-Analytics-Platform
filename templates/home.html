@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem("theme")||"dark";document.documentElement.setAttribute("data-theme",t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard | Churn Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+</head>
+<body>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="mesh-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="brand-mark">CI</div>
+      <span>Churn Intelligence</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}" class="active">Dashboard</a>
+      <a href="{{ url_for('predict') }}">Predict</a>
+      <a href="{{ url_for('bulk_predict') }}">Bulk Upload</a>
+      <a href="{{ url_for('history') }}">History</a>
+      <a href="{{ url_for('profile') }}">Profile</a>
+      {% if session.get('role') == 'admin' %}<a href="{{ url_for('admin_logs') }}">Activity Logs</a>{% endif %}
+    </div>
+    <div class="nav-right">
+      <span class="nav-user">{{ username }}</span>
+      <button type="button" class="theme-toggle" id="themeToggle" title="Toggle theme">Theme</button>
+      <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
+    </div>
+  </nav>
+
+  <!-- ============ HERO SECTION ============ -->
+  <section class="hero">
+    <div class="hero-content fade-in-up">
+      <span class="eyebrow">CUSTOMER JOURNEY ANALYTICS</span>
+      <h1>Predict Churn Before <br><span class="gradient-text">It Happens.</span></h1>
+      <p class="hero-desc">
+        An end-to-end machine learning system that analyzes real e-commerce
+        transaction data to segment customers, estimate lifetime value, and
+        predict churn risk — turning raw purchase history into retention action.
+      </p>
+
+      <div class="hero-meta">
+        <div class="meta-chip">
+          <div><strong>{{ "{:,}".format(stats.total_transactions) }}</strong><span>Real Transactions</span></div>
+        </div>
+        <div class="meta-chip">
+          <div><strong>{{ "{:,}".format(stats.total_customers) }}</strong><span>Unique Customers</span></div>
+        </div>
+        <div class="meta-chip">
+          <div><strong>{{ metrics.accuracy }}%</strong><span>Model Accuracy</span></div>
+        </div>
+      </div>
+
+      <a href="{{ url_for('predict') }}" class="btn-hero">
+        <span>Start Prediction</span>
+      </a>
+    </div>
+  </section>
+
+  <div class="container">
+
+    <!-- ============ ML MODEL INFO PANEL ============ -->
+    <div class="section-label">
+      <span class="eyebrow">MODEL INFORMATION</span>
+      <h2>Under the Hood</h2>
+    </div>
+
+    <div class="ml-info-card">
+      <div class="ml-info-header">
+        <div class="ml-badge">
+          <div>
+            <div class="ml-model-name">{{ metrics.model_name }}</div>
+            <div class="ml-model-sub">Trained on UCI Online Retail dataset — RFM-engineered features</div>
+          </div>
+        </div>
+      </div>
+      <div class="ml-metrics-grid">
+        <div class="ml-metric">
+          <span class="ml-metric-value">{{ metrics.accuracy }}%</span>
+          <span class="ml-metric-label">Accuracy</span>
+        </div>
+        <div class="ml-metric">
+          <span class="ml-metric-value">{{ metrics.precision }}%</span>
+          <span class="ml-metric-label">Precision</span>
+        </div>
+        <div class="ml-metric">
+          <span class="ml-metric-value">{{ metrics.recall }}%</span>
+          <span class="ml-metric-label">Recall</span>
+        </div>
+        <div class="ml-metric">
+          <span class="ml-metric-value">{{ metrics.f1_score }}%</span>
+          <span class="ml-metric-label">F1 Score</span>
+        </div>
+        <div class="ml-metric">
+          <span class="ml-metric-value">{{ metrics.roc_auc }}</span>
+          <span class="ml-metric-label">ROC-AUC</span>
+        </div>
+      </div>
+      <div class="ml-features">
+        <span class="ml-features-label">FEATURES USED (RFM-derived):</span>
+        <div class="ml-features-tags">
+          {% for f in metrics.features_used %}
+          <span class="feature-tag">{{ f }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MODEL COMPARISON ============ -->
+    <div class="section-label">
+      <span class="eyebrow">MODEL SELECTION</span>
+      <h2>Algorithm Comparison</h2>
+    </div>
+
+    <div class="comparison-card">
+      <p class="comparison-sub">Three algorithms were trained and cross-validated before selecting the final model.</p>
+      <div class="comparison-table-wrap">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Accuracy</th>
+              <th>Precision</th>
+              <th>Recall</th>
+              <th>F1</th>
+              <th>ROC-AUC</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in comparison %}
+            <tr class="{{ 'selected-row' if m.selected else '' }}">
+              <td class="model-name-cell">
+                {{ m.model_name }}
+                {% if m.selected %}<span class="selected-tag">SELECTED</span>{% endif %}
+              </td>
+              <td class="mono">{{ m.accuracy }}%</td>
+              <td class="mono">{{ m.precision }}%</td>
+              <td class="mono">{{ m.recall }}%</td>
+              <td class="mono">{{ m.f1_score }}%</td>
+              <td class="mono">{{ m.roc_auc }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="modelComparisonChart"></canvas>
+      </div>
+    </div>
+
+    <!-- ============ STATS GRID ============ -->
+    <div class="section-label">
+      <span class="eyebrow">LIVE DASHBOARD</span>
+      <h2>Customer Overview</h2>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" data-count="{{ stats.total_customers }}">0</div>
+        <div class="stat-label">Total Customers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" data-count="{{ stats.churn_rate }}" data-suffix="%">0</div>
+        <div class="stat-label">Churn Rate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" data-count="{{ stats.avg_clv | round | int }}" data-prefix="£">0</div>
+        <div class="stat-label">Avg. Customer Lifetime Value</div>
+      </div>
+    </div>
+
+    <div class="segments-card">
+      <h3>Customer Segments <span class="tag">RFM Analysis</span></h3>
+      {% for segment, count in stats.segments.items() %}
+      <div class="segment-row">
+        <span class="segment-name">{{ segment }}</span>
+        <div class="segment-bar-wrapper">
+          <div class="segment-bar" data-width="{{ (count / stats.total_customers * 100) | round(1) }}"></div>
+        </div>
+        <span class="segment-count">{{ count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="chart-row">
+      <div class="donut-card">
+        <h3>Retention Overview</h3>
+        <div class="donut-wrapper">
+          <svg class="donut" viewBox="0 0 200 200">
+            <circle class="donut-track" cx="100" cy="100" r="80"></circle>
+            <circle class="donut-fill" cx="100" cy="100" r="80"
+                    data-dash="{{ ((100 - stats.churn_rate) / 100 * 502.65) | round(2) }} 502.65"></circle>
+          </svg>
+          <div class="donut-label">
+            <div class="donut-value">{{ (100 - stats.churn_rate) | round(1) }}%</div>
+            <div class="donut-caption">Retained</div>
+          </div>
+        </div>
+        <div class="donut-legend">
+          <span><i class="dot dot-retained"></i>Retained ({{ (100 - stats.churn_rate) | round(1) }}%)</span>
+          <span><i class="dot dot-churned"></i>Churned ({{ stats.churn_rate }}%)</span>
+        </div>
+      </div>
+
+      <div class="insight-card">
+        <h3>Key Insight</h3>
+        <p class="insight-text">
+          Out of <strong>{{ "{:,}".format(stats.total_customers) }}</strong> customers analyzed,
+          <strong class="text-danger">{{ stats.churn_rate }}%</strong> are classified as churned
+          (no purchase in 90+ days). The model identifies <strong>purchase rate</strong> — orders
+          relative to tenure — as the strongest early-warning signal, ahead of raw order frequency
+          or total spend alone.
+        </p>
+        <div class="insight-stat">
+          <span class="insight-stat-label">Model Confidence (ROC-AUC)</span>
+          <span class="insight-stat-value">{{ metrics.roc_auc }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-section">
+      <a href="{{ url_for('predict') }}" class="btn-predict">
+        <span>Predict Customer Churn</span>
+      </a>
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    <p>Customer Journey Analytics &amp; Churn Prediction &middot; Built with Python, scikit-learn &amp; Flask</p>
+    <p class="footer-sub">Dataset: UCI Online Retail (541K+ real transactions) &middot; Model: {{ metrics.model_name }}</p>
+  </footer>
+
+  <script>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        const flashMessages = [
+          {% for category, message in messages %}
+            { category: "{{ category }}", text: "{{ message }}" },
+          {% endfor %}
+        ];
+      {% else %}
+        const flashMessages = [];
+      {% endif %}
+    {% endwith %}
+
+    function showToast(text, type) {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = "toast toast-" + (type || "error");
+      toast.innerHTML = '<span class="toast-dot"></span><span>' + text + '</span>';
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add("show"));
+      setTimeout(() => { toast.classList.remove("show"); setTimeout(() => toast.remove(), 300); }, 4200);
+    }
+    flashMessages.forEach(function (m) { showToast(m.text, m.category === "error" ? "error" : "success"); });
+
+    // Theme toggle
+    const themeToggleBtn = document.getElementById("themeToggle");
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener("click", function () {
+        const current = document.documentElement.getAttribute("data-theme") || "dark";
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("theme", next);
+      });
+    }
+
+    // Interactive model comparison bar chart
+    const comparisonData = {
+      labels: [{% for m in comparison %}"{{ m.model_name }}",{% endfor %}],
+      accuracy: [{% for m in comparison %}{{ m.accuracy }},{% endfor %}],
+      precision: [{% for m in comparison %}{{ m.precision }},{% endfor %}],
+      recall: [{% for m in comparison %}{{ m.recall }},{% endfor %}],
+    };
+
+    const chartCanvas = document.getElementById("modelComparisonChart");
+    if (chartCanvas) {
+      new Chart(chartCanvas, {
+        type: "bar",
+        data: {
+          labels: comparisonData.labels,
+          datasets: [
+            { label: "Accuracy %", data: comparisonData.accuracy, backgroundColor: "#6366f1" },
+            { label: "Precision %", data: comparisonData.precision, backgroundColor: "#22d3ee" },
+            { label: "Recall %", data: comparisonData.recall, backgroundColor: "#a78bfa" },
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: "#94a3b8", font: { family: "Inter" } } },
+            tooltip: { backgroundColor: "#0b1120", titleFont: { family: "Space Grotesk" }, bodyFont: { family: "JetBrains Mono" } }
+          },
+          scales: {
+            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(255,255,255,0.06)" } },
+            y: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(255,255,255,0.06)" }, beginAtZero: false, min: 60, max: 100 }
+          }
+        }
+      });
+    }
+
+    // Custom cursor
+    const cursorDot = document.getElementById("cursorDot");
+    const cursorRing = document.getElementById("cursorRing");
+    if (window.matchMedia("(pointer: fine)").matches) {
+      let ringX = 0, ringY = 0;
+      document.addEventListener("mousemove", function (e) {
+        cursorDot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        ringX += (e.clientX - ringX) * 0.15;
+        ringY += (e.clientY - ringY) * 0.15;
+      });
+      function animateRing() {
+        cursorRing.style.transform = `translate(${ringX}px, ${ringY}px)`;
+        requestAnimationFrame(animateRing);
+      }
+      animateRing();
+      document.querySelectorAll("a, button").forEach(function (el) {
+        el.addEventListener("mouseenter", () => cursorRing.classList.add("cursor-hover"));
+        el.addEventListener("mouseleave", () => cursorRing.classList.remove("cursor-hover"));
+      });
+    } else {
+      cursorDot.style.display = "none";
+      cursorRing.style.display = "none";
+    }
+
+    // Animated count-up for stat values
+    document.querySelectorAll(".stat-value").forEach(function (el) {
+      const target = parseFloat(el.getAttribute("data-count"));
+      const prefix = el.getAttribute("data-prefix") || "";
+      const suffix = el.getAttribute("data-suffix") || "";
+      const isDecimal = target % 1 !== 0;
+      let current = 0;
+      const duration = 1200;
+      const startTime = performance.now();
+      function step(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        current = target * eased;
+        el.textContent = prefix + (isDecimal ? current.toFixed(2) : Math.round(current).toLocaleString()) + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+
+    // Animate segment bars on load
+    window.addEventListener("load", function () {
+      document.querySelectorAll(".segment-bar").forEach(function (bar) {
+        const width = bar.getAttribute("data-width");
+        setTimeout(() => { bar.style.width = width + "%"; }, 200);
+      });
+
+      // Animate donut chart fill
+      const donutFill = document.querySelector(".donut-fill");
+      if (donutFill) {
+        const finalDash = donutFill.getAttribute("data-dash");
+        donutFill.style.strokeDasharray = "0 502.65";
+        requestAnimationFrame(function () {
+          donutFill.style.transition = "stroke-dasharray 1.4s cubic-bezier(0.4, 0, 0.2, 1)";
+          donutFill.style.strokeDasharray = finalDash;
+        });
+      }
+    });
+  </script>
+</body>
+</html>

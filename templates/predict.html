@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem("theme")||"dark";document.documentElement.setAttribute("data-theme",t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predict Churn | Churn Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/predict.css') }}">
+</head>
+<body>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="mesh-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="brand-mark">CI</div>
+      <span>Churn Intelligence</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Dashboard</a>
+      <a href="{{ url_for('predict') }}" class="active">Predict</a>
+      <a href="{{ url_for('bulk_predict') }}">Bulk Upload</a>
+      <a href="{{ url_for('history') }}">History</a>
+      <a href="{{ url_for('profile') }}">Profile</a>
+      {% if session.get('role') == 'admin' %}<a href="{{ url_for('admin_logs') }}">Activity Logs</a>{% endif %}
+    </div>
+    <div class="nav-right">
+      <span class="nav-user">{{ username }}</span>
+      <button type="button" class="theme-toggle" id="themeToggle" title="Toggle theme">Theme</button>
+      <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <a href="{{ url_for('home') }}" class="back-link">Back to Dashboard</a>
+
+    <div class="predict-card fade-in-up">
+      <span class="eyebrow">CHURN PREDICTION</span>
+      <h2>Predict Customer Churn</h2>
+      <p class="subtitle">Enter the customer's RFM (Recency, Frequency, Monetary) values to generate a live churn risk prediction.</p>
+
+      <div class="quick-fill-row">
+        <span class="quick-fill-label">Try an example:</span>
+        <button type="button" class="quick-fill-btn" data-preset="loyal">Loyal Customer</button>
+        <button type="button" class="quick-fill-btn" data-preset="risk">At-Risk Customer</button>
+      </div>
+
+      <form id="predictForm" method="POST" action="{{ url_for('predict') }}" novalidate>
+        <div class="input-card">
+          <div class="input-card-header">
+            <div class="input-card-title">
+              <label for="customer_name">Customer Name <span style="text-transform: none; font-weight: 400; color: var(--text-muted);">(optional)</span></label>
+            </div>
+          </div>
+          <input type="text" id="customer_name" name="customer_name"
+                 value="{{ form_data.customer_name if form_data else '' }}" placeholder="e.g. Alice Smith">
+        </div>
+
+        <div class="input-card">
+          <div class="input-card-header">
+            <div class="input-card-title tooltip-wrap">
+              <label for="frequency">Order Frequency</label>
+              <span class="tooltip-text">Frequency (F): the total number of distinct orders a customer has placed. Higher frequency generally signals stronger engagement.</span>
+            </div>
+          </div>
+          <input type="number" id="frequency" name="frequency" min="0" step="1"
+                 value="{{ form_data.frequency if form_data else 10 }}" placeholder="e.g. 10">
+          <span class="error-text" id="frequencyError"></span>
+        </div>
+
+        <div class="input-card">
+          <div class="input-card-header">
+            <div class="input-card-title tooltip-wrap">
+              <label for="monetary">Total Amount Spent (£)</label>
+              <span class="tooltip-text">Monetary (M): the customer's total lifetime spend across all orders. A core input for both churn risk and CLV.</span>
+            </div>
+          </div>
+          <input type="number" id="monetary" name="monetary" min="0" step="0.01"
+                 value="{{ form_data.monetary if form_data else 1500 }}" placeholder="e.g. 1500">
+          <span class="error-text" id="monetaryError"></span>
+        </div>
+
+        <div class="input-card">
+          <div class="input-card-header">
+            <div class="input-card-title tooltip-wrap">
+              <label for="avg_order_value">Average Order Value (£)</label>
+              <span class="tooltip-text">Total spent divided by number of orders. Helps distinguish frequent-small-basket shoppers from occasional-big-basket ones.</span>
+            </div>
+          </div>
+          <input type="number" id="avg_order_value" name="avg_order_value" min="0" step="0.01"
+                 value="{{ form_data.avg_order_value if form_data else 150 }}" placeholder="e.g. 150">
+          <span class="error-text" id="avgOrderValueError"></span>
+        </div>
+
+        <div class="input-card">
+          <div class="input-card-header">
+            <div class="input-card-title tooltip-wrap">
+              <label for="tenure_days">Customer Tenure (days)</label>
+              <span class="tooltip-text">Recency context: days since the customer's very first purchase. Combined with low frequency, long tenure can signal a fading relationship.</span>
+            </div>
+          </div>
+          <input type="number" id="tenure_days" name="tenure_days" min="0" step="1"
+                 value="{{ form_data.tenure_days if form_data else 200 }}" placeholder="e.g. 200">
+          <span class="error-text" id="tenureError"></span>
+        </div>
+
+        <button type="submit" class="btn-submit" id="predictBtn">
+          <span class="btn-text">Predict Churn Risk</span>
+          <span class="btn-spinner" id="predictSpinner"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    <p>Customer Journey Analytics &amp; Churn Prediction &middot; Built with Python, scikit-learn &amp; Flask</p>
+  </footer>
+
+  <script>
+    // Theme toggle
+    const themeToggleBtn = document.getElementById("themeToggle");
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener("click", function () {
+        const current = document.documentElement.getAttribute("data-theme") || "dark";
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("theme", next);
+      });
+    }
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        const flashMessages = [
+          {% for category, message in messages %}
+            { category: "{{ category }}", text: "{{ message }}" },
+          {% endfor %}
+        ];
+      {% else %}
+        const flashMessages = [];
+      {% endif %}
+    {% endwith %}
+
+    function showToast(text, type) {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = "toast toast-" + (type || "error");
+      toast.innerHTML = '<span class="toast-dot"></span><span>' + text + '</span>';
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add("show"));
+      setTimeout(() => { toast.classList.remove("show"); setTimeout(() => toast.remove(), 300); }, 4200);
+    }
+    flashMessages.forEach(function (m) { showToast(m.text, "error"); });
+
+    // Custom cursor
+    const cursorDot = document.getElementById("cursorDot");
+    const cursorRing = document.getElementById("cursorRing");
+    if (window.matchMedia("(pointer: fine)").matches) {
+      let ringX = 0, ringY = 0;
+      document.addEventListener("mousemove", function (e) {
+        cursorDot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        ringX += (e.clientX - ringX) * 0.15;
+        ringY += (e.clientY - ringY) * 0.15;
+      });
+      function animateRing() { cursorRing.style.transform = `translate(${ringX}px, ${ringY}px)`; requestAnimationFrame(animateRing); }
+      animateRing();
+      document.querySelectorAll("input, button, a").forEach(function (el) {
+        el.addEventListener("mouseenter", () => cursorRing.classList.add("cursor-hover"));
+        el.addEventListener("mouseleave", () => cursorRing.classList.remove("cursor-hover"));
+      });
+    } else {
+      cursorDot.style.display = "none";
+      cursorRing.style.display = "none";
+    }
+
+    // Quick-fill presets
+    const presets = {
+      loyal: { frequency: 15, monetary: 5000, avg_order_value: 330, tenure_days: 300 },
+      risk: { frequency: 1, monetary: 300, avg_order_value: 250, tenure_days: 320 }
+    };
+    document.querySelectorAll(".quick-fill-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const preset = presets[this.getAttribute("data-preset")];
+        Object.keys(preset).forEach(function (key) {
+          document.getElementById(key).value = preset[key];
+        });
+        showToast("Example values filled in.", "success");
+      });
+    });
+
+    // Validation + loading state
+    const form = document.getElementById("predictForm");
+    const predictBtn = document.getElementById("predictBtn");
+    const validators = [
+      { id: "frequency", errorId: "frequencyError", label: "Order Frequency" },
+      { id: "monetary", errorId: "monetaryError", label: "Total Amount Spent" },
+      { id: "avg_order_value", errorId: "avgOrderValueError", label: "Average Order Value" },
+      { id: "tenure_days", errorId: "tenureError", label: "Customer Tenure" },
+    ];
+
+    form.addEventListener("submit", function (e) {
+      let valid = true;
+      validators.forEach(function (v) {
+        const input = document.getElementById(v.id);
+        const errorEl = document.getElementById(v.errorId);
+        errorEl.textContent = "";
+        input.classList.remove("input-error");
+        const value = input.value.trim();
+        if (value === "") {
+          errorEl.textContent = v.label + " is required.";
+          input.classList.add("input-error");
+          valid = false;
+        } else if (isNaN(value) || Number(value) < 0) {
+          errorEl.textContent = v.label + " must be a valid positive number.";
+          input.classList.add("input-error");
+          valid = false;
+        }
+      });
+      if (!valid) {
+        e.preventDefault();
+        showToast("Please fix the highlighted fields.", "error");
+      } else {
+        predictBtn.classList.add("loading");
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+[
+  {
+    "model_name": "Logistic Regression",
+    "accuracy": 87.56,
+    "precision": 82.04,
+    "recall": 80.34,
+    "f1_score": 81.18,
+    "roc_auc": 0.9383,
+    "cv_mean_accuracy": 86.17,
+    "selected": true
+  },
+  {
+    "model_name": "Random Forest",
+    "accuracy": 86.87,
+    "precision": 83.33,
+    "recall": 75.86,
+    "f1_score": 79.42,
+    "roc_auc": 0.9485,
+    "cv_mean_accuracy": 86.28,
+    "selected": false
+  },
+  {
+    "model_name": "Gradient Boosting",
+    "accuracy": 86.87,
+    "precision": 83.08,
+    "recall": 76.21,
+    "f1_score": 79.5,
+    "roc_auc": 0.9453,
+    "cv_mean_accuracy": 85.99,
+    "selected": false
+  }
+]

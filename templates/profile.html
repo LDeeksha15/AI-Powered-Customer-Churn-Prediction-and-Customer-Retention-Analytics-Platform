@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem("theme")||"dark";document.documentElement.setAttribute("data-theme",t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile | Churn Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <div class="mesh-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="brand-mark">CI</div>
+      <span>Churn Intelligence</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Dashboard</a>
+      <a href="{{ url_for('predict') }}">Predict</a>
+      <a href="{{ url_for('bulk_predict') }}">Bulk Upload</a>
+      <a href="{{ url_for('history') }}">History</a>
+      <a href="{{ url_for('profile') }}" class="active">Profile</a>
+      {% if session.get('role') == 'admin' %}<a href="{{ url_for('admin_logs') }}">Activity Logs</a>{% endif %}
+    </div>
+    <div class="nav-right">
+      <span class="nav-user">{{ username }}</span>
+      <button type="button" class="theme-toggle" id="themeToggle" title="Toggle theme">Theme</button>
+      <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <span class="eyebrow">ACCOUNT</span>
+      <h2>My Profile</h2>
+      <p>Your account details and prediction activity summary.</p>
+    </div>
+
+    <div class="glass-card">
+      <h3>Account Details</h3>
+      <div class="stat-chips">
+        <div class="stat-chip">
+          <div class="stat-chip-value" style="font-size: 15px;">{{ user.name }}</div>
+          <div class="stat-chip-label">Name</div>
+        </div>
+        <div class="stat-chip">
+          <div class="stat-chip-value" style="font-size: 13px;">{{ user.email }}</div>
+          <div class="stat-chip-label">Email</div>
+        </div>
+        <div class="stat-chip">
+          <div class="stat-chip-value" style="font-size: 15px; text-transform: capitalize;">{{ user.role }}</div>
+          <div class="stat-chip-label">Role</div>
+        </div>
+        <div class="stat-chip">
+          <div class="stat-chip-value" style="font-size: 13px;">{{ user.created_at[:10] }}</div>
+          <div class="stat-chip-label">Member Since</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <h3>Prediction Activity</h3>
+      <div class="stat-chips">
+        <div class="stat-chip">
+          <div class="stat-chip-value">{{ stats.total }}</div>
+          <div class="stat-chip-label">Total Predictions</div>
+        </div>
+        <div class="stat-chip">
+          <div class="stat-chip-value" style="color: var(--danger);">{{ stats.by_risk.get('High', 0) }}</div>
+          <div class="stat-chip-label">High Risk Found</div>
+        </div>
+        <div class="stat-chip">
+          <div class="stat-chip-value" style="color: var(--warning);">{{ stats.by_risk.get('Medium', 0) }}</div>
+          <div class="stat-chip-label">Medium Risk Found</div>
+        </div>
+        <div class="stat-chip">
+          <div class="stat-chip-value" style="color: var(--success);">{{ stats.by_risk.get('Low', 0) }}</div>
+          <div class="stat-chip-label">Low Risk Found</div>
+        </div>
+      </div>
+    </div>
+
+    <a href="{{ url_for('history') }}" class="btn-secondary">View Full Prediction History</a>
+  </div>
+
+  <footer class="page-footer">
+    <p>Customer Journey Analytics &amp; Churn Prediction &middot; Built with Python, scikit-learn &amp; Flask</p>
+  </footer>
+  <script>
+    var themeToggleBtn = document.getElementById("themeToggle");
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener("click", function () {
+        var current = document.documentElement.getAttribute("data-theme") || "dark";
+        var next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("theme", next);
+      });
+    }
+  </script>
+</body>
+</html>
