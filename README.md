@@ -1,0 +1,2 @@
+# AI-Powered-Customer-Churn-Prediction-and-Customer-Retention-Analytics-Platform
+Built an end-to-end Customer Churn Prediction &amp; CLV Analytics platform using Python, Flask, Logistic Regression, RFM Analysis, MySQL, HTML/CSS/JavaScript, achieving 87.56% accuracy on 541K+ e-commerce transactions. Implemented authentication, Explainable AI, customer segmentation, churn prediction, CLV estimation, and CSV/Excel/PDF export.
