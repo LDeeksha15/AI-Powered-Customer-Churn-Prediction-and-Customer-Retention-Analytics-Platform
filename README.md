@@ -1,14 +1,14 @@
 # AI-Powered Customer Churn Prediction and Customer Retention Analytics Platform
 
+## Project Live Deployment Link:
+https://ai-powered-customer-churn-prediction-and.onrender.com/login
+
 A full-stack, production-shaped churn prediction platform built on the
 **real UCI Online Retail dataset** (541,910 transactions, UK-based online
 gift retailer, Dec 2010 – Dec 2011). RFM segmentation, CLV estimation,
 a Logistic Regression model, a SQLite-backed multi-user system with
 registration, bulk prediction, model explainability, exports, an admin
 audit trail, a REST API, and a glassmorphism UI with dark/light themes.
-
-## Project Live Deployment Link:
-https://ai-powered-customer-churn-prediction-and.onrender.com/login
 
 ## Project Structure
 ```
@@ -171,4 +171,6 @@ means swapping the connection method and one line of table syntax
 
 ## Conclusion
 
-This project demonstrates an end-to-end Machine Learning application, from data preprocessing and feature engineering to model training, evaluation, and deployment as a full-stack web application. It combines customer churn prediction, Customer Lifetime Value (CLV) estimation, RFM segmentation, Explainable AI, user authentication, REST APIs, and persistent database management into a production-oriented analytics platform. The project highlights practical skills in Machine Learning, Data Analytics, Backend Development, Database Management, and Web Application Deployment using real-world e-commerce data.
+This project demonstrates a complete, production-shaped machine learning system — not just a model in a notebook, but a deployed, usable application. Starting from a real, messy 541,000-row dataset, it covers the full lifecycle: data cleaning, feature engineering (RFM/CLV), model selection with explicit data-leakage prevention,algorithm comparison, model explainability, and a full-stack multi-user web application with authentication, bulk processing, exports, and a REST API. 
+
+The goal throughout was honesty over impressiveness — every accuracy number reported here is real and reproducible, every limitation (no live email service, free-tier hosting constraints) is documented rather than hidden, and a genuine bug (a multicollinearity-driven explanation error) was caught, fixed, and documented rather than shipped silently. That process — not just the final accuracy score — is the actual point of this project as a portfolio piece.
