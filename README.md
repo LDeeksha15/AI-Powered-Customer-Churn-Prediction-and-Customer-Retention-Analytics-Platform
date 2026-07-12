@@ -97,7 +97,7 @@ Or register your own account via the login page.
 - **REST API** (`POST /api/predict`) for external integration
 - **Admin activity audit log** — logins, predictions, uploads, exports, password resets
 - Responsive design (mobile breakpoints across all pages)
-- Deployment-ready (`Procfile`, `gunicorn`, environment-configurable secret key and port)
+- Deployment live on Render
 
 ## Database — Real, Persistent Storage (SQLite)
 
@@ -126,13 +126,10 @@ means swapping the connection method and one line of table syntax
   (e.g. Flask-Mail + a provider like SendGrid).
 - **Email notifications for high-risk customers** were not implemented —
   same email-service limitation.
-- **Not deployed live** — `Procfile` and `gunicorn` are included so this
-  is one push away from Render/Railway/Heroku, but actual deployment
-  requires creating an account on one of those platforms yourself.
 - **XGBoost was not added** to the model comparison — the environment
   used to build this had no internet access to install it. The comparison
   currently covers Logistic Regression, Random Forest, and Gradient Boosting.
-
+ 
 ## Project Highlights
 
 1. **Real transactional data**, not synthetic — 541K+ rows, honestly cleaned
@@ -143,8 +140,8 @@ means swapping the connection method and one line of table syntax
 6. **Bulk processing + exports** — the kind of feature real internal tools need
 7. **Admin audit trail** — shows understanding of production concerns
 8. **REST API** — shows the model can be consumed by other systems
-9. **Honest about limitations** — email sending and live deployment are
-   correctly identified as needing infrastructure beyond a local demo
+9. **Deployment live** , not just running locally   
+
 
 ## Tech Stack
 
@@ -171,6 +168,4 @@ means swapping the connection method and one line of table syntax
 
 ## Conclusion
 
-This project demonstrates a complete, production-shaped machine learning system — not just a model in a notebook, but a deployed, usable application. Starting from a real, messy 541,000-row dataset, it covers the full lifecycle: data cleaning, feature engineering (RFM/CLV), model selection with explicit data-leakage prevention,algorithm comparison, model explainability, and a full-stack multi-user web application with authentication, bulk processing, exports, and a REST API. 
-
-The goal throughout was honesty over impressiveness — every accuracy number reported here is real and reproducible, every limitation (no live email service, free-tier hosting constraints) is documented rather than hidden, and a genuine bug (a multicollinearity-driven explanation error) was caught, fixed, and documented rather than shipped silently. That process — not just the final accuracy score — is the actual point of this project as a portfolio piece.
+This project demonstrates a complete, production-shaped machine learning system — not just a model in a notebook, but a deployed, usable application. Starting from a real, messy 541,000-row dataset, it covers the full lifecycle: data cleaning, feature engineering (RFM/CLV), model selection with explicit data-leakage prevention, algorithm comparison, model explainability, and a full-stack multi-user web application with authentication, bulk processing, exports, and a REST API — deployed live and accessible to anyone. The goal throughout was honesty over impressiveness — every accuracy number reported here is real and reproducible, and every limitation is documented rather than hidden.
